@@ -4,8 +4,7 @@ using UnityEngine;
 
 public class CreateDesk : MonoBehaviour, IMouseInteraction
 {
-    [SerializeField] GameObject createPanel;
-
+    [SerializeField] private CreatePanel deskPanel;
     public void CanInteraction(bool _canInteraction)
     {
         throw new System.NotImplementedException();
@@ -18,8 +17,9 @@ public class CreateDesk : MonoBehaviour, IMouseInteraction
 
     public void InteractionLeftButtonFuc(GameObject hitObject)
     {
-        createPanel.GetComponent<CreatePanel>().SetCreateAcquisition(Acquisition.CraftTable);
-        createPanel.SetActive(true);
+        deskPanel.gameObject.SetActive(true);
+        deskPanel.SetCreateAcquisition(Acquisition.CraftTable);
+        deskPanel.OpenFor(Acquisition.CraftTable); // 제작대 전용
     }
 
     public void InteractionRightButtonFuc(GameObject hitObject)

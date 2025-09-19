@@ -34,13 +34,18 @@ public class CreatePanel : MonoBehaviour
         createCountText.text = $"제작 개수:\t{createCount}";
     }
 
-    private void OnEnable()
+    public void OpenFor(Acquisition acq, int type = 0)
     {
-        createType = 0;
+        acquisition = acq;
+        createType = type;
+        createCount = 1;
+        createCountText.text = $"제작 개수:\t{createCount}";
 
-        UpdateCreateItemList(createType);
-        SetCreateItemPanelInfo();
+        UpdateCreateItemList();     // 매개변수 없이 내부 상태(acquisition, createType)로 빌드
+        SetCreateItemPanelInfo();   // 선택 아이템에 맞춰 패널 갱신
+        gameObject.SetActive(true);
     }
+
 
     public void SetCreateAcquisition(Acquisition acquisition)
     {
@@ -51,46 +56,67 @@ public class CreatePanel : MonoBehaviour
     {
         createType = num;
 
-        UpdateCreateItemList(createType);
+        UpdateCreateItemList();
     }
 
-    public void UpdateCreateItemList(int createType)
+    public void UpdateCreateItemList()
     {
-        Item[] createItemList = gameManager.itemDatas.Where(x => x.AcquisitionList.Contains(acquisition)).ToArray();
+        // 1) 현재 제작대 종류 + 탭(타입)으로 필터링한 "표시용 리스트"를 먼저 만든다.
+        var filtered = gameManager.itemDatas
+            .Where(x => x.AcquisitionList.Contains(acquisition) && x.Type == (ItemType)createType)
+            .ToList();
 
+        // 2) 기존 슬롯 전부 비활성화
         for (int i = 0; i < createItemListParent.childCount; ++i)
             createItemListParent.GetChild(i).gameObject.SetActive(false);
 
-        for (int i = 0; i < createItemList.Length; i++)
+        // 3) 필터링된 리스트 기준으로 0..N-1 인덱스를 사용해 슬롯 구성
+        for (int j = 0; j < filtered.Count; j++)
         {
-            if (createItemList[i].Type != (ItemType)createType)
-                continue;
+            var data = filtered[j];
 
-            GameObject itemList = null;
-
-            if (createItemListParent.childCount <= i)
-            {
-                itemList = Instantiate(createItemSlotPrefab, createItemListParent);
-                Button clickButton = itemList.transform.Find("Button").GetComponent<Button>();
-                int num = i;    // Closure problem
-                clickButton.onClick.AddListener(() => item = createItemList[num]);
-                clickButton.onClick.AddListener(SetCreateItemPanelInfo);
-            }
+            GameObject slotGO;
+            if (createItemListParent.childCount <= j)
+                slotGO = Instantiate(createItemSlotPrefab, createItemListParent);
             else
             {
-                itemList = createItemListParent.GetChild(i).gameObject;
-                createItemListParent.GetChild(i).gameObject.SetActive(true);
+                slotGO = createItemListParent.GetChild(j).gameObject;
+                slotGO.SetActive(true);
             }
 
-            itemList.transform.Find("ItemImage").GetComponent<Image>().sprite = Resources.Load<Sprite>($"Item/{createItemList[i].ImageId}");
-            itemList.transform.Find("ItemName").GetComponent<TextMeshProUGUI>().text = createItemList[i].ItemName;
+            // 아이콘/이름
+            slotGO.transform.Find("ItemImage").GetComponent<Image>().sprite =
+                Resources.Load<Sprite>($"Item/{data.ImageId}");
+            slotGO.transform.Find("ItemName").GetComponent<TextMeshProUGUI>().text = data.ItemName;
+
+            // 버튼 리스너 '모두 제거' 후, 현재 아이템만 등록 (중첩 방지)
+            var btn = slotGO.transform.Find("Button").GetComponent<Button>();
+            btn.onClick.RemoveAllListeners();
+            btn.onClick.AddListener(() =>
+            {
+                item = data;
+                SetCreateItemPanelInfo();
+            });
         }
 
-        item = createItemList[0];
+        // 4) 기본 선택
+        item = filtered.Count > 0 ? filtered[0] : null;
     }
 
     public void SetCreateItemPanelInfo()
     {
+        // 선택 아이템이 없으면 패널만 초기화하고 끝
+        if (item == null)
+        {
+            itemName.text = "";
+            itemImage.sprite = null;
+            canCreate = false;
+
+            for (int i = 0; i < itemMaterialSlot.childCount; ++i)
+                itemMaterialSlot.GetChild(i).gameObject.SetActive(false);
+            return;
+        }
+
         itemName.text = item.ItemName;
         itemImage.sprite = Resources.Load<Sprite>($"Item/{item.ImageId}");
 
