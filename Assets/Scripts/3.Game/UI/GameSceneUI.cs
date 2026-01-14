@@ -433,10 +433,20 @@ public class GameSceneUI : Singleton<GameSceneUI>
 
     void ItemsCountUI()
     {
-        woodCount.text = gameManager.haveItems[gameManager.idByMaterialType[MaterialType.Wood]].ToString();
-        fish1Count.text = gameManager.haveItems[gameManager.idByMaterialType[MaterialType.Fish]].ToString();
-        fish2Count.text = gameManager.haveItems[gameManager.idByMaterialType[MaterialType.HighFish]].ToString();
+        woodCount.text = GetHaveCount(MaterialType.Wood).ToString();
+        fish1Count.text = GetHaveCount(MaterialType.Fish).ToString();
+        fish2Count.text = GetHaveCount(MaterialType.HighFish).ToString();
         bulletCount.text = gameManager.totalBulletCount.ToString();
+    }
+
+    int GetHaveCount(MaterialType type)
+    {
+        int id = gameManager.idByMaterialType[type];
+
+        if (gameManager.haveItems != null && gameManager.haveItems.TryGetValue(id, out int count))
+            return count;
+
+        return 0;
     }
 
     void RoundUI()

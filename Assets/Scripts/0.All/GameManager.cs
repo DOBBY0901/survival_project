@@ -146,25 +146,25 @@ public class GameManager : Singleton<GameManager>
 
         LoadItemData();
 
-#if UNITY_EDITOR
-        foreach (var material in idByMaterialType)
-        {
-            materialTypeById.Add(material.Value, material.Key);
-        }
-
-        int num = 10;
-
-        foreach (var itemInfo in itemInfos)
-        {
-            if (haveItems.ContainsKey(itemInfo.Value.itemId))
-                haveItems[itemInfo.Value.itemId] += num;
-
-            else
-                haveItems.Add(itemInfo.Value.itemId, num);
-
-            num++;
-        }
-#endif
+//#if UNITY_EDITOR
+//        foreach (var material in idByMaterialType)
+//        {
+//            materialTypeById.Add(material.Value, material.Key);
+//        }
+//
+//        int num = 10;
+//
+//        foreach (var itemInfo in itemInfos)
+//        {
+//            if (haveItems.ContainsKey(itemInfo.Value.itemId))
+//                haveItems[itemInfo.Value.itemId] += num;
+//
+//            else
+//                haveItems.Add(itemInfo.Value.itemId, num);
+//
+//            num++;
+//        }
+//#endif
     }
 
     void InitSetting()
