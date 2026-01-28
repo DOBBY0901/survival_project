@@ -197,37 +197,45 @@ public class Fishing : Singleton<Fishing>
         int rand = Random.Range(0, 100);
 
 #if UNITY_EDITOR
-        int high = gameManager.specialStatus[SpecialStatus.BaitWarm] ? 0 : 0;
+        int high = 0;
 #else
-        int high = gameManager.specialStatus[SpecialStatus.BaitWarm] ? 60 : 80;
+    int high = gameManager.specialStatus[SpecialStatus.BaitWarm] ? 60 : 80;
 #endif
 
         if (rand < high)
         {
-            gameManager.fishLowGradeCount++;
+            //일반 생선
             catchFishImage.sprite = fishTypeImage[0];
-        }
 
+            int fishId = gameManager.idByMaterialType[MaterialType.Fish];
+
+            if (gameManager.haveItems.TryGetValue(fishId, out int cur))
+                gameManager.haveItems[fishId] = cur + 1;
+            else
+                gameManager.haveItems[fishId] = 1;
+        }
         else
         {
-            gameManager.fishHighGradeCount++;
+            //고급 생선
             catchFishImage.sprite = fishTypeImage[1];
 
-            rand = Random.Range(0, 100);
+            int fishId = gameManager.idByMaterialType[MaterialType.HighFish];
 
+            if (gameManager.haveItems.TryGetValue(fishId, out int cur))
+                gameManager.haveItems[fishId] = cur + 1;
+            else
+                gameManager.haveItems[fishId] = 1;
+
+            //고급 생선일 때 조각 카드
 #if UNITY_EDITOR
-            if (rand >= 0)
-            {
-                GetRandomPiece();
-            }
+            GetRandomPiece();
 #else
-            if (rand >= 100 - gameManager.pieceCardGetRate)
-            {
-                GetRandomPiece();
-            }
+        if (Random.Range(0, 100) >= 100 - gameManager.pieceCardGetRate)
+            GetRandomPiece();
 #endif
         }
     }
+
 
     void GetRandomPiece()
     {

@@ -138,16 +138,8 @@ public class BeachItem : MonoBehaviour, IMouseInteraction
         }
 
         int woodId = gameManager.idByMaterialType[MaterialType.Wood];
+        gameManager.AddItemById(woodId, 1);
 
-        if (gameManager.haveItems.TryGetValue(woodId, out int cur))
-        { 
-            gameManager.haveItems[woodId] = cur + 1; 
-        }
-        else 
-        { 
-            gameManager.haveItems[woodId] = 1; 
-        }
-            
         character.getItemUI.GetComponent<GetItemUI>().SetGetItemImage(GetComponent<SpriteRenderer>().sprite, 1);
         character.getItemUI.gameObject.SetActive(true);
 

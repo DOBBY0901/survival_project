@@ -14,10 +14,10 @@ public class GatherFruit : MonoBehaviour, IMouseInteraction
     bool canGather;
 
     Character character;
-    ItemManager itemManager;
     GameSceneUI gameSceneUI;
     GamesceneManager gamesceneManager;
     SoundManager soundManager;
+    GameManager gameManager; // 추가 - haveItems를 쓰기 위해
 
     List<DiabolicItemInfo> itemList = new List<DiabolicItemInfo>();
 
@@ -31,16 +31,16 @@ public class GatherFruit : MonoBehaviour, IMouseInteraction
     {
         canGather = false;
         character = Character.Instance;
-        itemManager = ItemManager.Instance;
         gameSceneUI = GameSceneUI.Instance;
         gamesceneManager = GamesceneManager.Instance;
         soundManager = SoundManager.Instance;
+        gameManager = GameManager.Instance; // 추가
         outlineColor = spriteRenderer.material.GetColor("_SolidOutline");
     }
 
     private void Update()
     {
-        if(isGathering && gamesceneManager.isNight)
+        if (isGathering && gamesceneManager.isNight)
         {
             Destroy(gameObject);
         }
@@ -65,17 +65,21 @@ public class GatherFruit : MonoBehaviour, IMouseInteraction
     {
         itemList.Clear();
 
+        // 수정 - ItemManager.getItems (DiabolicItemInfo 키) 대신
+        // GameManager.haveItems (int itemId 키) 기준으로 “획득 가능 후보”를 만든다.
         for (int i = 0; i < bushPieceList.Length; ++i)
         {
-            if (!itemManager.getItems.ContainsKey(bushPieceList[i]))
-            {
-                itemList.Add(bushPieceList[i]);
-            }
+            DiabolicItemInfo info = bushPieceList[i];
+            int itemId = info.ItemNum;
 
-            else
+            // beachItem과 동일한 방식: 있으면 수량 확인, 없으면 0으로 취급
+            int curCount = 0;
+            gameManager.haveItems.TryGetValue(itemId, out curCount);
+
+            // MaxCount 미만이면 획득 후보에 포함
+            if (curCount < info.MaxCount)
             {
-                if (itemManager.getItems[bushPieceList[i]] < bushPieceList[i].MaxCount)
-                    itemList.Add(bushPieceList[i]);
+                itemList.Add(info);
             }
         }
 
@@ -106,8 +110,21 @@ public class GatherFruit : MonoBehaviour, IMouseInteraction
             }
         }
 
+       
         gameSceneUI.ShowPieceCard(itemList[rand]);
-        ItemManager.Instance.AddItem(itemList[rand]);
+
+        // 수정 - ItemManager.AddItem(...) 제거
+        // beachItem과 동일한 방식으로 haveItems에 안전하게 누적한다.
+        int getId = itemList[rand].ItemNum;
+
+        if (gameManager.haveItems.TryGetValue(getId, out int cur))
+        {
+            gameManager.haveItems[getId] = cur + 1;
+        }
+        else
+        {
+            gameManager.haveItems[getId] = 1;
+        }
     }
 
     public void CanInteraction(bool _canInteraction)
@@ -152,13 +169,12 @@ public class GatherFruit : MonoBehaviour, IMouseInteraction
         if (Random.Range(0, 100) >= 0)
             GetRandomPiece();
 #else
-
         if (Random.Range(0, 100) >= 100 - GameManager.Instance.pieceCardGetRate)
             GetRandomPiece();
 #endif
 
         RecoveryGaugeUp();
-        
+
         anim.SetBool("isLogging", false);
 
         character.ChangeAnimationController(0);
@@ -170,16 +186,24 @@ public class GatherFruit : MonoBehaviour, IMouseInteraction
     {
         int getFruitQuantity = Random.Range(1, 5);
 
+        //추가 - 열매 아이템 ID를 가져와서 인벤에 누적
+        int fruitId = gameManager.idByMaterialType[MaterialType.Fruit]; // MaterialType 이름이 다르면 그걸로 바꿈
+        gameManager.AddItemById(fruitId, getFruitQuantity);             // 공통 방식(안전 누적)
+
         character.getItemUI.GetComponent<GetItemUI>().SetGetItemImage(fruitImage, getFruitQuantity);
         character.getItemUI.gameObject.SetActive(true);
 
-        character.currentRecoveryGauge = Mathf.Clamp(character.currentRecoveryGauge + defaultGaugeUpValue * getFruitQuantity, 0, character.maxRecoveryGauge);
+        character.currentRecoveryGauge = Mathf.Clamp(
+            character.currentRecoveryGauge + defaultGaugeUpValue * getFruitQuantity,
+            0,
+            character.maxRecoveryGauge
+        );
     }
+
 
 
     public void InteractionRightButtonFuc(GameObject hitObject)
     {
-
     }
 
     public bool ReturnCanInteraction()
@@ -198,7 +222,6 @@ public class GatherFruit : MonoBehaviour, IMouseInteraction
 
             spriteRenderer.material.SetColor("_SolidOutline", outlineColor);
         }
-
         else
         {
             if (outlineColor.a == 0)
@@ -219,12 +242,4 @@ public class GatherFruit : MonoBehaviour, IMouseInteraction
 
         spriteRenderer.material.SetColor("_SolidOutline", outlineColor);
     }
-
-#if UNITY_EDITOR
-    /*private void OnDrawGizmos()
-    {
-        Gizmos.color = Color.red;
-        Gizmos.DrawWireSphere(transform.position, 2);
-    }*/
-#endif
 }

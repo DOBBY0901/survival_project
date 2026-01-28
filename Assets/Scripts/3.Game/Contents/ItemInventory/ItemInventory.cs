@@ -56,20 +56,26 @@ public class ItemInventory : MonoBehaviour
 
         foreach (var item in gameManager.haveItems)
         {
-            if (gameManager.itemInfos[item.Key].itemType == type)
+            // item.Key가 itemInfos에 존재하는지 먼저 확인
+            if (!gameManager.itemInfos.TryGetValue(item.Key, out ItemInfo info))
+                continue;
+
+            if (info.itemType == type)
             {
-                slots[index].SetSlot(gameManager.itemInfos[item.Key]);
+                // 슬롯 범위 보호 (혹시 아이템이 28개 넘을 때)
+                if (index >= slots.Count) break;
+
+                slots[index].SetSlot(info);
                 index++;
             }
         }
 
         for (int i = index; i < slots.Count; i++)
-        {
             slots[i].SetSlot(null);
-        }
 
         currentCategory = type;
     }
+
 
     public void SetItemDescription(ItemInfo item)
     {

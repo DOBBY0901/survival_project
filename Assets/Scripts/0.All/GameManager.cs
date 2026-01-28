@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.AI;
+using System;
 
 public enum Status
 {
@@ -275,4 +276,22 @@ public class GameManager : Singleton<GameManager>
             itemDatas.Add(new Item(itemInfos[i].itemId, itemInfos[i].itemName, itemInfos[i].itemType, itemInfos[i].needMaterialTypes, itemInfos[i].needMaterialCounts, itemInfos[i].takeTimeByAcquisition, itemInfos[i].acquisitions, itemInfos[i].isConsumable, itemInfos[i].effect, itemInfos[i].decription, itemInfos[i].creatTime));
         }
     }
+
+    public event Action OnHaveItemsChanged;
+    public void AddItemById(int itemId, int amount = 1)
+    {
+        if (haveItems.TryGetValue(itemId, out int cur))
+            haveItems[itemId] = cur + amount;
+        else
+            haveItems[itemId] = amount;
+
+        OnHaveItemsChanged?.Invoke();
+    }
+
+    public void AddItemByMaterial(MaterialType type, int amount = 1)
+    {
+        int id = idByMaterialType[type];
+        AddItemById(id, amount);
+    }
+
 }

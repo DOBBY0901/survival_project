@@ -24,9 +24,13 @@ public class ItemInvenSlot : MonoBehaviour, IBeginDragHandler, IDragHandler, IEn
         if (itemInfo != null)
         {
             itemImage.sprite = Resources.Load<Sprite>($"Item/{itemInfo.itemId}");
-            itemCount.text = $"x {GameManager.Instance.haveItems[itemInfo.itemId]}";
+
+            int count = 0;
+            GameManager.Instance.haveItems.TryGetValue(itemInfo.itemId, out count);
+            itemCount.text = $"x {count}";
         }
     }
+
 
     public void SetDescription()
     {
