@@ -158,6 +158,9 @@ public class ItemDictionay : MonoBehaviour
 
     public void ChangeItemInfoDescriptionText(int index)
     {
+        if (itemsByCategory == null || itemsByCategory.Count == 0) return;
+        if (index < 0 || index >= itemsByCategory.Count) return;
+
         DiscriptionContents.SetActive(true);
 
         itemImage.sprite = Resources.Load<Sprite>($"Item/{itemsByCategory[index].ItemId}");

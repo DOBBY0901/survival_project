@@ -1,13 +1,16 @@
+using System;
 using System.IO;
+using UnityEditor;
 using UnityEngine;
-using UnityEngine.UI;
+using UnityEngine.Purchasing.MiniJSON;
 
 [System.Serializable]
 public class ItemInfo
 {
+    // json파일 내 변수명들과 일치해야함
     public int itemId;
     public string itemName;
-    public int itemType;
+    /*int*/ public string itemType;
     public string acquisitions;
     public string needMaterialTypes;
     public string needMaterialCounts;
@@ -15,11 +18,26 @@ public class ItemInfo
     public string takePercentByAcquisition;
     public int isConsumable;
     public int maxCount;
+    public float createTime;
+    public int preyType;
     public string effect;
     public string decription;
-    public float creatTime = 0;
 
-    public ItemInfo(int itemId, string itemName, int itemType, string acquisitions, string needMaterialTypes, string needMaterialCounts, string takeTime, string takePercent, int isConsumable, int maxCount, string effect, string decription, float createTime = 0f)
+    public ItemInfo(
+        int itemId, 
+        string itemName, 
+        /*int*/ string itemType, 
+        string acquisitions, 
+        string needMaterialTypes, 
+        string needMaterialCounts, 
+        string takeTime, 
+        string takePercent, 
+        int isConsumable, 
+        int maxCount, 
+        float createTime, 
+        int preyType, 
+        string effect, 
+        string decription)
     {
         this.itemId = itemId;
         this.itemName = itemName;
@@ -31,9 +49,10 @@ public class ItemInfo
         this.takePercentByAcquisition = takePercent;
         this.isConsumable = isConsumable;
         this.maxCount = maxCount;
+        this.createTime = createTime;
+        this.preyType = preyType;
         this.decription = decription;
         this.effect = effect;
-        this.creatTime = createTime;
     }
 }
 
@@ -43,10 +62,9 @@ public class ItemData : Singleton<ItemData>
 
     int count;
 
-
     private class ItemJson
     {
-        public ItemInfo[] items;
+        public ItemInfo[] items;    // Json rootKey
 
         public ItemJson(ItemInfo[] items)
         {
@@ -70,7 +88,7 @@ public class ItemData : Singleton<ItemData>
 
         for (int i = 0; i < items.Length; i++)
         {
-            ItemInfo newItem = new ItemInfo(0, "", 0, "", "", "", "", "", 0, 0, "", "");
+            ItemInfo newItem = new ItemInfo(0, "", /*0*/"", "", "", "", "", "", 0, 0, 0.0f, 0, "", "");
             items[i] = newItem;
         }
 
@@ -106,7 +124,7 @@ public class ItemData : Singleton<ItemData>
     [ContextMenu("AddJsonFile")]
     public void AddJsonFile()
     {
-        ItemJson itemJson = new ItemJson(AddItemArray(1));      
+        ItemJson itemJson = new ItemJson(AddItemArray(1));
 
         string json = JsonUtility.ToJson(itemJson, true);
         SaveFile("ItemtData", json);
@@ -130,7 +148,7 @@ public class ItemData : Singleton<ItemData>
 
         for (int j = beforeItems.Length; j < items.Length; j++)
         {
-            ItemInfo newItem = new ItemInfo(0, "", 0, "", "", "", "", "", 0, 0, "", "");
+            ItemInfo newItem = new ItemInfo(0, "", /*0*/"", "", "", "", "", "", 0, 0, 0.0f, 0, "", "");
             items[j] = newItem;
         }
 
@@ -148,6 +166,7 @@ public class ItemData : Singleton<ItemData>
         itemInfos = items;
 
         Debug.Log("아이템 데이터 로드 완료");
+        EditorUtility.SetDirty(this);
     }
 
     private string LoadFile(string fileName)

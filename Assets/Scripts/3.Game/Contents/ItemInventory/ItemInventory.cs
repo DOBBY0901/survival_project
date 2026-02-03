@@ -53,21 +53,26 @@ public class ItemInventory : MonoBehaviour
     public void ChangeCategory(int type)
     {
         int index = 0;
+        ItemType mask = (ItemType)(1 << type);
 
-        foreach (var item in gameManager.haveItems)
+        foreach (var kv in gameManager.haveItems)
         {
-            // item.Key가 itemInfos에 존재하는지 먼저 확인
-            if (!gameManager.itemInfos.TryGetValue(item.Key, out ItemInfo info))
-                continue;
+            int itemId = kv.Key;
 
-            if (info.itemType == type)
-            {
-                // 슬롯 범위 보호 (혹시 아이템이 28개 넘을 때)
-                if (index >= slots.Count) break;
+            // itemDatas에서 itemId 찾기 (미리 Dictionary로 캐싱하면 더 좋음)
+            Item item = gameManager.itemDatas.Find(x => x.ItemId == itemId);
+            if (item == null) continue;
+            
+            //하나라도 포함시 통과
+            if (!item.CompareType(mask, false)) continue;
 
-                slots[index].SetSlot(info);
-                index++;
-            }
+            if (index >= slots.Count) break;
+
+            // 슬롯 UI가 ItemInfo를 받는 구조라면
+            if (!gameManager.itemInfos.TryGetValue(itemId, out ItemInfo info)) continue;
+
+            slots[index].SetSlot(info);
+            index++;
         }
 
         for (int i = index; i < slots.Count; i++)
@@ -75,6 +80,7 @@ public class ItemInventory : MonoBehaviour
 
         currentCategory = type;
     }
+
 
 
     public void SetItemDescription(ItemInfo item)

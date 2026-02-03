@@ -113,18 +113,8 @@ public class GatherFruit : MonoBehaviour, IMouseInteraction
        
         gameSceneUI.ShowPieceCard(itemList[rand]);
 
-        // 수정 - ItemManager.AddItem(...) 제거
-        // beachItem과 동일한 방식으로 haveItems에 안전하게 누적한다.
         int getId = itemList[rand].ItemNum;
-
-        if (gameManager.haveItems.TryGetValue(getId, out int cur))
-        {
-            gameManager.haveItems[getId] = cur + 1;
-        }
-        else
-        {
-            gameManager.haveItems[getId] = 1;
-        }
+        gameManager.AddItemById(getId, 1);
     }
 
     public void CanInteraction(bool _canInteraction)
@@ -189,7 +179,6 @@ public class GatherFruit : MonoBehaviour, IMouseInteraction
         //추가 - 열매 아이템 ID를 가져와서 인벤에 누적
         int fruitId = gameManager.idByMaterialType[MaterialType.Fruit]; // MaterialType 이름이 다르면 그걸로 바꿈
         gameManager.AddItemById(fruitId, getFruitQuantity);             // 공통 방식(안전 누적)
-
         character.getItemUI.GetComponent<GetItemUI>().SetGetItemImage(fruitImage, getFruitQuantity);
         character.getItemUI.gameObject.SetActive(true);
 
