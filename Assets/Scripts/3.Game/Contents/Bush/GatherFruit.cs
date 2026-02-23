@@ -20,12 +20,16 @@ public class GatherFruit : MonoBehaviour, IMouseInteraction
     GameManager gameManager; // 추가 - haveItems를 쓰기 위해
 
     List<DiabolicItemInfo> itemList = new List<DiabolicItemInfo>();
+    List<Item> bushFruitCandidates;
 
     Color outlineColor;
 
     EffectSound currentSfx;
 
     bool isGathering = false;
+   
+    int pendingFruitId = -1;
+    int pendingGatherTime = 5; // 기본값
 
     private void Start()
     {
@@ -36,6 +40,7 @@ public class GatherFruit : MonoBehaviour, IMouseInteraction
         soundManager = SoundManager.Instance;
         gameManager = GameManager.Instance; // 추가
         outlineColor = spriteRenderer.material.GetColor("_SolidOutline");
+
     }
 
     private void Update()
@@ -130,18 +135,37 @@ public class GatherFruit : MonoBehaviour, IMouseInteraction
 
             int num = (character.transform.position - transform.position).x > 0 ? 0 : 1;
 
-            character.MoveToInteractableObject(gatherPoint[num].position, gameObject, 3, 5, -1, num);
+            // 1) 이번 채집 보상(열매 종류) 미리 결정
+            pendingFruitId = PickBushFruitId();
+            if (pendingFruitId == -1)
+                pendingFruitId = gameManager.idByMaterialType[MaterialType.Fruit];
+
+            // 2) 그 열매의 채집 시간 가져오기
+            pendingGatherTime = 5; // fallback
+            Item picked = gameManager.itemDatas.Find(x => x.ItemId == pendingFruitId);
+            if (picked != null && picked.takeTimeByAcquisition != null &&
+                picked.takeTimeByAcquisition.TryGetValue(Acquisition.Bush, out int t))
+            {
+                pendingGatherTime = Mathf.Max(1, t);
+            }
+
+            Debug.Log($"[GatherFruit] pickId={pendingFruitId}, pendingGatherTime={pendingGatherTime}");
+            // 3) waitTime을 고정 5가 아니라 데이터 시간으로
+            character.MoveToInteractableObject(gatherPoint[num].position, gameObject, pendingGatherTime, 3, -1, num);
         }
     }
 
+
     public IEnumerator EndInteraction(Animator anim, float waitTime)
     {
+        Debug.Log($"[GatherFruit] EndInteraction waitTime={waitTime}");
+
         isGathering = true;
 
         currentSfx = soundManager.PlaySFXAndReturn(gatheringSound, true);
 
         yield return CoroutineCaching.WaitForSeconds(waitTime);
-
+        
         if (gamesceneManager.isNight)
             yield break;
 
@@ -174,19 +198,73 @@ public class GatherFruit : MonoBehaviour, IMouseInteraction
 
     void RecoveryGaugeUp()
     {
+        
         int getFruitQuantity = Random.Range(1, 5);
 
-        //추가 - 열매 아이템 ID를 가져와서 인벤에 누적
-        int fruitId = gameManager.idByMaterialType[MaterialType.Fruit]; // MaterialType 이름이 다르면 그걸로 바꿈
-        gameManager.AddItemById(fruitId, getFruitQuantity);             // 공통 방식(안전 누적)
-        character.getItemUI.GetComponent<GetItemUI>().SetGetItemImage(fruitImage, getFruitQuantity);
+        // 1) 채집 확률 테이블에서 열매 종류 1개 선택
+        int fruitId = pendingFruitId;
+        
+        // 후보가 없으면 기존 Fruit로 fallback
+        if (fruitId == -1)
+        {
+          fruitId = gameManager.idByMaterialType[MaterialType.Fruit];
+        }
+        // 2) 인벤에 지급
+        gameManager.AddItemById(fruitId, getFruitQuantity);
+
+        // 3) UI 아이콘
+        Sprite icon = Resources.Load<Sprite>($"Item/{fruitId}");
+        if (icon == null) icon = fruitImage; // fallback
+
+        character.getItemUI.GetComponent<GetItemUI>().SetGetItemImage(icon, getFruitQuantity);
         character.getItemUI.gameObject.SetActive(true);
 
+        // 4) 회복 게이지 증가
         character.currentRecoveryGauge = Mathf.Clamp(
             character.currentRecoveryGauge + defaultGaugeUpValue * getFruitQuantity,
             0,
             character.maxRecoveryGauge
         );
+
+        pendingFruitId = -1;
+    }
+    void CacheBushFruitCandidates()
+    {
+        // 채집(Bush)로 얻을 수 있는 열매 후보만 추림
+        bushFruitCandidates = gameManager.itemDatas.FindAll(it =>
+            it.AcquisitionList != null &&
+            it.AcquisitionList.Contains(Acquisition.Bush) &&
+            it.takePercentByAcquisition != null &&
+            it.takePercentByAcquisition.ContainsKey(Acquisition.Bush) &&
+            it.Preytype == PreyType.FRUIT
+        );
+    }
+    int PickBushFruitId()
+    {
+        if (bushFruitCandidates == null || bushFruitCandidates.Count == 0)
+            CacheBushFruitCandidates();
+
+        if (bushFruitCandidates == null || bushFruitCandidates.Count == 0)
+            return -1;
+
+        int total = 0;
+        foreach (var it in bushFruitCandidates)
+            total += Mathf.Max(0, it.takePercentByAcquisition[Acquisition.Bush]);
+
+        if (total <= 0) return -1;
+
+        int roll = Random.Range(1, total + 1);
+        int acc = 0;
+
+        foreach (var it in bushFruitCandidates)
+        {
+            acc += Mathf.Max(0, it.takePercentByAcquisition[Acquisition.Bush]);
+            if (roll <= acc) return it.ItemId;
+        }
+
+        return -1;
+
+
     }
 
 

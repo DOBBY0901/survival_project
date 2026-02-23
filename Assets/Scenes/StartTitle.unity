@@ -6191,7 +6191,7 @@ MonoBehaviour:
   - itemId: 2030016
     itemName: "\uC870\uAC1C"
     itemType: 00010000
-    acquisitions: 2
+    acquisitions: 0
     needMaterialTypes: 
     needMaterialCounts: 
     takeTimeByAcquisition: 5
@@ -6280,7 +6280,7 @@ MonoBehaviour:
   - itemId: 2030022
     itemName: "\uD478\uB978\uC0C9 \uC0B0\uD638"
     itemType: 00010000
-    acquisitions: 2
+    acquisitions: 0
     needMaterialTypes: 
     needMaterialCounts: 
     takeTimeByAcquisition: 5

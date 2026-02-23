@@ -648,12 +648,13 @@ public class Character : Singleton<Character>
         isAttacked = false;
     }
 
-    public void MoveToInteractableObject(Vector3 movePos, GameObject interactionObejct, float animTime, int animNum, int clipNum = -1, int flipNum = -1)
+    public void MoveToInteractableObject(Vector3 movePos, GameObject interactionObejct, float waitTime, int animNum, int clipNum = -1, int flipNum = -1) //채집시간이 animTime으로 굳어져 waitTime으로 변경
     {
-        StartCoroutine(IMoveToInteractableObject(movePos, interactionObejct, animTime, animNum, clipNum, flipNum));
+        StartCoroutine(IMoveToInteractableObject(movePos, interactionObejct, waitTime, animNum, clipNum, flipNum));
     }
 
-    IEnumerator IMoveToInteractableObject(Vector3 movePos, GameObject interactionObejct, float animTime, int animNum, int clipNum = -1, int flipNum = -1)
+
+    IEnumerator IMoveToInteractableObject(Vector3 movePos, GameObject interactionObejct, float waitTime, int animNum, int clipNum = -1, int flipNum = -1)
     {
         bool isArrive = false;
         isCanControll = false;
@@ -701,7 +702,7 @@ public class Character : Singleton<Character>
                 }
 
                 anim.SetBool("isLogging", true);
-                StartCoroutine(interactionObejct.GetComponent<IMouseInteraction>().EndInteraction(anim, animTime));
+                StartCoroutine(interactionObejct.GetComponent<IMouseInteraction>().EndInteraction(anim, waitTime));
                 isArrive = true;
             }
 
