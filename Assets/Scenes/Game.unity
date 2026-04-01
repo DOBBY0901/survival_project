@@ -412286,9 +412286,10 @@ MonoBehaviour:
     takePercentByAcquisition: 
     isConsumable: 0
     maxCount: 0
+    createTime: 0
+    preyType: 0
     effect: 
     decription: 
-    creatTime: 0
 --- !u!1 &8925396809838986013
 GameObject:
   m_ObjectHideFlags: 0

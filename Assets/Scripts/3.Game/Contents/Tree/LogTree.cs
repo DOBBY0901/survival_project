@@ -49,13 +49,18 @@ public class LogTree : MonoBehaviour, IMouseInteraction
 
     void CacheLoggingCandidates()
     {
-        if (loggingCandidates != null && loggingCandidates.Count > 0) return;
+        // 메인 드랍 후보(나무/대나무/흑단)만
+        int woodId = gameManager.idByMaterialType[MaterialType.Wood];
+        int bambooId = gameManager.idByMaterialType[MaterialType.Bamboo];
+        int blackWoodId = gameManager.idByMaterialType[MaterialType.BlackWood];
 
         loggingCandidates = gameManager.itemDatas.FindAll(it =>
+            it != null &&
             it.AcquisitionList != null &&
             it.AcquisitionList.Contains(Acquisition.Logging) &&
             it.takePercentByAcquisition != null &&
-            it.takePercentByAcquisition.ContainsKey(Acquisition.Logging)
+            it.takePercentByAcquisition.ContainsKey(Acquisition.Logging) &&
+            (it.ItemId == woodId || it.ItemId == bambooId || it.ItemId == blackWoodId) //벌목 후보에 메인 드랍 아이템만.
         );
     }
 
@@ -162,16 +167,18 @@ public class LogTree : MonoBehaviour, IMouseInteraction
             pendingDropId = gameManager.idByMaterialType[MaterialType.Wood];
         }
 
-        
         pendingLogTime = 3; // fallback
+
         Item picked = gameManager.itemDatas.Find(x => x.ItemId == pendingDropId);
         if (picked != null && picked.takeTimeByAcquisition != null &&
             picked.takeTimeByAcquisition.TryGetValue(Acquisition.Logging, out int t))
         {
-            pendingLogTime = Mathf.Max(1, t);
+            // 시간이 1~30초 범위를 벗어나면 무시
+            if (t >= 1 && t <= 30) pendingLogTime = t;
+            else pendingLogTime = 3;
         }
+        
 
-    
         Debug.Log($"[LogTree] pendingDropId={pendingDropId}, pendingLogTime={pendingLogTime}");
 
         character.MoveToInteractableObject(logPoses[posNum].position, gameObject, pendingLogTime, 3, 1, posNum);
